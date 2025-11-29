@@ -1,4 +1,4 @@
-import sys
+
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -8,6 +8,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QPixmap, QIntValidator
 from PyQt5.QtCore import Qt
+from output_ui import OutputWindow
+import solver
+
 
 
 class NetworkGUI(QMainWindow):
@@ -80,12 +83,11 @@ class NetworkGUI(QMainWindow):
         self.add_user_btn.setStyleSheet(self.green_button())
         self.remove_user_btn = QPushButton("Remove Last User")
         self.remove_user_btn.setStyleSheet(self.red_button())
-        self.edit_user_btn = QPushButton("Save Changes")
-        self.edit_user_btn.setStyleSheet(self.edit_button_style())
+
+
 
         user_buttons.addWidget(self.add_user_btn)
         user_buttons.addWidget(self.remove_user_btn)
-        user_buttons.addWidget(self.edit_user_btn)
         user_layout.addLayout(user_buttons)
 
         top.addLayout(user_layout)
@@ -141,12 +143,9 @@ class NetworkGUI(QMainWindow):
         self.add_ap_btn.setStyleSheet(self.green_button())
         self.remove_ap_btn = QPushButton("Remove Last AP")
         self.remove_ap_btn.setStyleSheet(self.red_button())
-        self.edit_ap_btn = QPushButton("Save Changes")
-        self.edit_ap_btn.setStyleSheet(self.edit_button_style())
 
         ap_buttons.addWidget(self.add_ap_btn)
         ap_buttons.addWidget(self.remove_ap_btn)
-        ap_buttons.addWidget(self.edit_ap_btn)
         ap_layout.addLayout(ap_buttons)
 
         top.addLayout(ap_layout)
@@ -155,17 +154,20 @@ class NetworkGUI(QMainWindow):
         settings = QHBoxLayout()
         settings.setSpacing(16)
 
+
         wifi_label = QLabel("WiFi Band:")
         wifi_label.setStyleSheet("QLabel { color: #283593; font-weight: 600; }")
         self.wifi_band = QComboBox()
         self.wifi_band.addItems(["2.4 GHz", "5 GHz"])
         self.wifi_band.setStyleSheet(self.dropdown_style())
+        self.wifi_band.setCurrentIndex(0)
 
         env_label = QLabel("Environment Type:")
         env_label.setStyleSheet("QLabel { color: #283593; font-weight: 600; }")
         self.env_type = QComboBox()
         self.env_type.addItems(["Indoor","Urban", "Outdoor"])
         self.env_type.setStyleSheet(self.dropdown_style())
+        self.env_type.setCurrentIndex(0)
 
         self.power_checkbox = QCheckBox("Include Power Consumption in Optimization")
         self.power_checkbox.setStyleSheet("""
@@ -186,6 +188,8 @@ class NetworkGUI(QMainWindow):
             QCheckBox::indicator:checked { background: #2e7d32; }
         """)
         self.power_checkbox.stateChanged.connect(self.toggle_device_combos)
+        self.power_checkbox.setChecked(False)
+
         self.calculate_btn = QPushButton("Calculate")
         self.calculate_btn.setStyleSheet("""
             QPushButton {
@@ -212,32 +216,16 @@ class NetworkGUI(QMainWindow):
 
         layout.addLayout(settings)
 
+
         # === Connections (functional buttons) ===
         self.add_user_btn.clicked.connect(self.add_user_row)
         self.remove_user_btn.clicked.connect(self.remove_user_row)
-        self.edit_user_btn.clicked.connect(self.save_user_table)
         self.add_ap_btn.clicked.connect(self.add_ap_row)
         self.remove_ap_btn.clicked.connect(self.remove_ap_row)
-        self.edit_ap_btn.clicked.connect(self.save_ap_table)
+        self.calculate_btn.clicked.connect(self.run_solver)
 
-        # Start with editing enabled
-        self.user_table.setEditTriggers(QAbstractItemView.AllEditTriggers)
-        self.ap_table.setEditTriggers(QAbstractItemView.AllEditTriggers)
 
     # === Styles ===
-    def edit_button_style(self):
-        return """
-        QPushButton {
-            background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #7e57c2, stop:1 #42a5f5);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 8px 16px;
-            font-weight: bold;
-        }
-        QPushButton:hover { background-color: #5e35b1; }
-        """
 
     def green_button(self):
         return """
@@ -282,15 +270,16 @@ class NetworkGUI(QMainWindow):
            """
 
         # === Table logic ===
+
     def add_user_row(self):
         row = self.user_table.rowCount()
         self.user_table.insertRow(row)
 
-        # Name (text box)
+        # Name
         name_edit = QLineEdit()
         self.user_table.setCellWidget(row, 0, name_edit)
 
-        # Priority (dropdown)
+        # Priority
         priority_combo = QComboBox()
         priority_combo.addItems(["Low", "Medium", "High"])
         self.user_table.setCellWidget(row, 1, priority_combo)
@@ -298,18 +287,18 @@ class NetworkGUI(QMainWindow):
         # X coordinate
         x_edit = QLineEdit()
         x_edit.setValidator(QIntValidator())
-        self.user_table.setCellWidget(row, 3, x_edit)
+        self.user_table.setCellWidget(row, 2, x_edit)
 
         # Y coordinate
         y_edit = QLineEdit()
         y_edit.setValidator(QIntValidator())
-        self.user_table.setCellWidget(row, 4, y_edit)
+        self.user_table.setCellWidget(row, 3, y_edit)
 
         # Device type (dropdown)
         device_combo = QComboBox()
         device_combo.addItems(["IoT Sensor", "Wearable", "Smartphone", "Tablet", "Laptop"])
         device_combo.setEnabled(False)  # start disabled until energy checkbox is checked
-        self.user_table.setCellWidget(row, 5, device_combo)
+        self.user_table.setCellWidget(row, 4, device_combo)
 
         # Keep reference
         self.device_combos.append(device_combo)
@@ -318,6 +307,8 @@ class NetworkGUI(QMainWindow):
         row = self.user_table.rowCount()
         if row > 0:
             self.user_table.removeRow(row - 1)
+            if self.device_combos:
+                self.device_combos.pop()  # keep references aligned
 
     def add_ap_row(self):
         row = self.ap_table.rowCount()
@@ -337,20 +328,15 @@ class NetworkGUI(QMainWindow):
         channel_spin.setRange(1, 165)  # typical WiFi channels
         self.ap_table.setCellWidget(row, 2, channel_spin)
 
-        # Range (numeric text box)
-        range_edit = QLineEdit()
-        range_edit.setValidator(QIntValidator())
-        self.ap_table.setCellWidget(row, 3, range_edit)
-
         # X coordinate (numeric text box)
         x_edit = QLineEdit()
         x_edit.setValidator(QIntValidator())
-        self.ap_table.setCellWidget(row, 4, x_edit)
+        self.ap_table.setCellWidget(row, 3, x_edit)
 
         # Y coordinate (numeric text box)
         y_edit = QLineEdit()
         y_edit.setValidator(QIntValidator())
-        self.ap_table.setCellWidget(row, 5, y_edit)
+        self.ap_table.setCellWidget(row, 4, y_edit)
 
     def remove_ap_row(self):
         row = self.ap_table.rowCount()
@@ -365,23 +351,25 @@ class NetworkGUI(QMainWindow):
     def save_user_table(self):
         users_data = []
         for row in range(self.user_table.rowCount()):
-            name = self.user_table.cellWidget(row, 0).text()
-            priority = self.user_table.cellWidget(row, 1).currentText()
-            mandatory = self.user_table.cellWidget(row, 2).layout().itemAt(0).widget().isChecked()
-            x = self.user_table.cellWidget(row, 3).text()
-            y = self.user_table.cellWidget(row, 4).text()
-            device = self.user_table.cellWidget(row, 5).currentText()
+            name_w = self.user_table.cellWidget(row, 0)
+            prio_w = self.user_table.cellWidget(row, 1)
+            x_w = self.user_table.cellWidget(row, 2)
+            y_w = self.user_table.cellWidget(row, 3)
+            dev_w = self.user_table.cellWidget(row, 4)
+
+            name = name_w.text() if name_w else ""
+            priority = prio_w.currentText() if prio_w else ""
+            x = x_w.text() if x_w else ""
+            y = y_w.text() if y_w else ""
+            device = dev_w.currentText() if dev_w else ""
 
             users_data.append({
                 "Name": name,
                 "Priority": priority,
-                "Mandatory": mandatory,
                 "X": int(x) if x else None,
                 "Y": int(y) if y else None,
                 "Device": device
             })
-
-        QMessageBox.information(self, "Success", "User table changes saved successfully!")
         return users_data
 
     def save_ap_table(self):
@@ -390,33 +378,38 @@ class NetworkGUI(QMainWindow):
             name = self.ap_table.cellWidget(row, 0).text()
             capacity = self.ap_table.cellWidget(row, 1).value()
             channel = self.ap_table.cellWidget(row, 2).value()
-            range_val = self.ap_table.cellWidget(row, 3).text()
-            x = self.ap_table.cellWidget(row, 4).text()
-            y = self.ap_table.cellWidget(row, 5).text()
+            x = self.ap_table.cellWidget(row, 3).text()
+            y = self.ap_table.cellWidget(row, 4).text()
 
             aps_data.append({
                 "Name": name,
                 "Capacity": capacity,
                 "Channel": channel,
-                "Range": int(range_val) if range_val else None,
                 "X": int(x) if x else None,
                 "Y": int(y) if y else None
             })
 
-        QMessageBox.information(self, "Success", "AP table changes saved successfully!")
+
         return aps_data
 
     def get_global_settings(self):
         settings = {
-            "WifiBand": self.band_combo.currentText(),
-            "EnvironmentType": self.env_combo.currentText(),
+            "WifiBand": self.wifi_band.currentText(),
+            "EnvironmentType": self.env_type.currentText(),
             "IncludePowerConsumption": self.power_checkbox.isChecked()
         }
         return settings
 
+    def run_solver(self):
+        users = self.save_user_table()
+        aps = self.save_ap_table()
+        settings = self.get_global_settings()
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = NetworkGUI()
-    window.show()
-    sys.exit(app.exec_())
+        # Temporary dummy assignment until solver is ready
+        assignments = {
+            "AP1": [u["Name"] for u in users[:2]],  # first two users
+            "AP2": [u["Name"] for u in users[2:]]  # rest
+        }
+
+        self.output_window = OutputWindow(assignments)
+        self.output_window.show()
