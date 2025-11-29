@@ -1,5 +1,5 @@
 
-import sys
+
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QTableWidget, QTableWidgetItem, QPushButton,
@@ -8,8 +8,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QPixmap, QIntValidator
 from PyQt5.QtCore import Qt
+from solver import solve_network
+from calculations import compute_intermediates
 from output_ui import OutputWindow
-import solver
+
 
 
 
@@ -64,12 +66,12 @@ class NetworkGUI(QMainWindow):
         self.user_table.verticalHeader().setVisible(False)
         self.user_table.setStyleSheet("""
             QTableWidget {
-                background-color: #f3e5f5;
+                background-color: #e8eaf6;
                 font-family: Roboto;
                 border: 1px solid #7e57c2; 
             }
             QHeaderView::section {
-                background-color: #7e57c2;
+                background-color: #5c6bc0;
                 color: white;
                 font-weight: bold;
                 padding: 6px;
@@ -402,15 +404,27 @@ class NetworkGUI(QMainWindow):
         return settings
 
     def run_solver(self):
-        users = self.save_user_table()
-        aps = self.save_ap_table()
-        settings = self.get_global_settings()
+        try:
+            users = self.save_user_table()
+            aps = self.save_ap_table()
+            settings = self.get_global_settings()
+            intermediates = compute_intermediates(users, aps, settings)
+            assignments, status = solve_network(intermediates, aps)
 
-        # Temporary dummy assignment until solver is ready
-        assignments = {
-            "AP1": [u["Name"] for u in users[:2]],  # first two users
-            "AP2": [u["Name"] for u in users[2:]]  # rest
-        }
+            messages = [
+                f"Status: {status}",
+                f"High-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_H']])}/{len(intermediates['U_H'])}",
+                f"Medium-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_M']])}/{len(intermediates['U_M'])}",
+                f"Low-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_L']])}/{len(intermediates['U_L'])}"
+            ]
 
-        self.output_window = OutputWindow(users, aps, settings, assignments)
-        self.output_window.show()
+            self.output_window = OutputWindow(users, aps, settings, assignments, messages=messages)
+            self.output_window.show()
+
+
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Solver failed:\n{e}")
+
+
+

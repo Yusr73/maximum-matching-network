@@ -1,23 +1,19 @@
-# output_ui.py
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 from calculations_ui import CalculationsWindow
 from calculations import compute_intermediates
 
-
 class OutputWindow(QWidget):
-    def __init__(self, users, aps, settings, assignments):
+    def __init__(self, users, aps, settings, assignments, messages=None):
         super().__init__()
-        self.users = users
-        self.aps = aps
-        self.settings = settings
-        self.assignments = assignments
-
         self.setWindowTitle("Optimization Result")
         self.setFixedSize(700, 500)
 
-        layout = QVBoxLayout(self)
+        self.users = users
+        self.aps = aps
+        self.settings = settings
 
+        layout = QVBoxLayout(self)
 
         # === Styled Table ===
         self.table = QTableWidget()
@@ -25,8 +21,6 @@ class OutputWindow(QWidget):
         self.table.setHorizontalHeaderLabels(["Access Point", "Assigned Users"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
-
-        # Fancy stylesheet
         self.table.setStyleSheet("""
             QTableWidget {
                 background-color: #f3e5f5;
@@ -43,27 +37,45 @@ class OutputWindow(QWidget):
                 padding: 8px;
                 border: none;
             }
-            QTableWidget::item {
-                padding: 6px;
-            }
+            QTableWidget::item { padding: 6px; }
         """)
-
-        # Populate table
         self.table.setRowCount(len(assignments))
-        for row, (ap, users) in enumerate(assignments.items()):
+        for row, (ap, users_list) in enumerate(assignments.items()):
             ap_item = QTableWidgetItem(ap)
             ap_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 0, ap_item)
 
-            users_item = QTableWidgetItem(", ".join(users))
+            users_item = QTableWidgetItem(", ".join(users_list))
             users_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 1, users_item)
 
         layout.addWidget(self.table)
 
+        # === Solver messages area ===
+        self.message_label = QLabel()
+        self.message_label.setWordWrap(True)
+        self.message_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.message_label.setStyleSheet("""
+            QLabel {
+                background-color: #f9f9ff;
+                border: 1px solid #b39ddb;
+                border-radius: 10px;
+                padding: 8px;
+                font-family: Roboto;
+                font-size: 13px;
+                color: #283593;
+            }
+        """)
+        # Reserve visual space
+        self.message_label.setMinimumHeight(80)
+        layout.addWidget(self.message_label)
+
+        # Initialize with messages
+        if messages:
+            self.set_solver_messages(messages)
+
         # === Buttons ===
         button_layout = QHBoxLayout()
-
         self.intermediate_btn = QPushButton("Show Intermediate Calculations")
         self.intermediate_btn.setStyleSheet(self.button_style())
         self.intermediate_btn.clicked.connect(self.show_intermediates)
@@ -73,7 +85,6 @@ class OutputWindow(QWidget):
 
         button_layout.addWidget(self.intermediate_btn)
         button_layout.addWidget(self.topology_btn)
-
         layout.addLayout(button_layout)
 
     def button_style(self):
@@ -99,3 +110,24 @@ class OutputWindow(QWidget):
             from PyQt5.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Intermediate calculation failed:\n{e}")
 
+    # === Message API ===
+    def set_solver_messages(self, messages):
+        """
+        Accepts a list of strings or a single string and renders them.
+        """
+        if isinstance(messages, (list, tuple)):
+            text = "\n".join(f"• {msg}" for msg in messages)
+        else:
+            text = str(messages)
+        self.message_label.setText(text)
+
+    def append_solver_message(self, message):
+        """
+        Appends a single message to the label.
+        """
+        current = self.message_label.text().strip()
+        bullet = f"• {message}"
+        if current:
+            self.message_label.setText(current + "\n" + bullet)
+        else:
+            self.message_label.setText(bullet)
