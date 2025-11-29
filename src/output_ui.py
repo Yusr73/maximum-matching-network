@@ -1,14 +1,23 @@
 # output_ui.py
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout
 from PyQt5.QtCore import Qt
+from calculations_ui import CalculationsWindow
+from calculations import compute_intermediates
+
 
 class OutputWindow(QWidget):
-    def __init__(self, assignments):
+    def __init__(self, users, aps, settings, assignments):
         super().__init__()
+        self.users = users
+        self.aps = aps
+        self.settings = settings
+        self.assignments = assignments
+
         self.setWindowTitle("Optimization Result")
         self.setFixedSize(700, 500)
 
         layout = QVBoxLayout(self)
+
 
         # === Styled Table ===
         self.table = QTableWidget()
@@ -57,6 +66,7 @@ class OutputWindow(QWidget):
 
         self.intermediate_btn = QPushButton("Show Intermediate Calculations")
         self.intermediate_btn.setStyleSheet(self.button_style())
+        self.intermediate_btn.clicked.connect(self.show_intermediates)
 
         self.topology_btn = QPushButton("Show Topology")
         self.topology_btn.setStyleSheet(self.button_style())
@@ -79,3 +89,13 @@ class OutputWindow(QWidget):
             }
             QPushButton:hover { background-color: #6a1b9a; }
         """
+
+    def show_intermediates(self):
+        try:
+            intermediates = compute_intermediates(self.users, self.aps, self.settings)
+            self.calculations_window = CalculationsWindow(intermediates)
+            self.calculations_window.show()
+        except Exception as e:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Error", f"Intermediate calculation failed:\n{e}")
+

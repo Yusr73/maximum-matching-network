@@ -275,11 +275,11 @@ class NetworkGUI(QMainWindow):
         row = self.user_table.rowCount()
         self.user_table.insertRow(row)
 
-        # Name
+        # Name (text box)
         name_edit = QLineEdit()
         self.user_table.setCellWidget(row, 0, name_edit)
 
-        # Priority
+        # Priority (dropdown)
         priority_combo = QComboBox()
         priority_combo.addItems(["Low", "Medium", "High"])
         self.user_table.setCellWidget(row, 1, priority_combo)
@@ -297,7 +297,8 @@ class NetworkGUI(QMainWindow):
         # Device type (dropdown)
         device_combo = QComboBox()
         device_combo.addItems(["IoT Sensor", "Wearable", "Smartphone", "Tablet", "Laptop"])
-        device_combo.setEnabled(False)  # start disabled until energy checkbox is checked
+        # Enable immediately if checkbox is already checked
+        device_combo.setEnabled(self.power_checkbox.isChecked())
         self.user_table.setCellWidget(row, 4, device_combo)
 
         # Keep reference
@@ -411,5 +412,5 @@ class NetworkGUI(QMainWindow):
             "AP2": [u["Name"] for u in users[2:]]  # rest
         }
 
-        self.output_window = OutputWindow(assignments)
+        self.output_window = OutputWindow(users, aps, settings, assignments)
         self.output_window.show()
