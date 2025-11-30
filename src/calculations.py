@@ -8,11 +8,11 @@ def compute_intermediates(users, aps, settings):
     # Alpha by environment
     alpha = 3 if env == "Indoor" else 3.5 if env == "Urban" else 2.7
 
-    # D_max by WiFi band and environment
+    # Example: small-scale indoor test
     if wifi_band == "2.4 GHz":
-        D_max = 30 if env == "Indoor" else 40 if env == "Urban" else 80
+        D_max = 3 if env == "Indoor" else 4 if env == "Urban" else 8
     else:  # 5 GHz
-        D_max = 15 if env == "Indoor" else 25 if env == "Urban" else 50
+        D_max = 1.5 if env == "Indoor" else 2.5 if env == "Urban" else 5
 
     D_intf = 1.5 * D_max
 

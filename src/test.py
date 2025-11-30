@@ -6,29 +6,32 @@ from calculations import compute_intermediates
 from solver import solve_network
 from output_ui import OutputWindow
 
-# === Users with varied priorities and devices ===
 users = [
     {"Name": "U1", "Priority": "High", "X": 0, "Y": 0, "Device": "Laptop"},
-    {"Name": "U2", "Priority": "High", "X": 1, "Y": 2, "Device": "Smartphone"},
-    {"Name": "U3", "Priority": "Medium", "X": 4, "Y": 0, "Device": "Tablet"},
-    {"Name": "U4", "Priority": "Medium", "X": 3, "Y": 3, "Device": "Wearable"},
-    {"Name": "U5", "Priority": "Low", "X": 5, "Y": 2, "Device": "IoT Sensor"},
-    {"Name": "U6", "Priority": "Low", "X": 6, "Y": 0, "Device": "Laptop"}
+    {"Name": "U2", "Priority": "High", "X": 1, "Y": 1, "Device": "Smartphone"},
+    {"Name": "U3", "Priority": "Medium", "X": 2, "Y": 0, "Device": "Tablet"},
+    {"Name": "U4", "Priority": "Medium", "X": 3, "Y": 1, "Device": "Wearable"},
+    {"Name": "U5", "Priority": "Medium", "X": 4, "Y": 0, "Device": "Smartphone"},
+    {"Name": "U6", "Priority": "Low", "X": 5, "Y": 1, "Device": "IoT Sensor"},
+    {"Name": "U7", "Priority": "Low", "X": 6, "Y": 0, "Device": "Laptop"},
+    {"Name": "U8", "Priority": "Low", "X": 7, "Y": 1, "Device": "Tablet"},
+    {"Name": "U9", "Priority": "Low", "X": 8, "Y": 0, "Device": "Smartphone"},
 ]
 
-# === APs with different capacities and channels ===
 aps = [
-    {"Name": "AP1", "Capacity": 2, "Channel": 1, "X": 0, "Y": 1},
+    {"Name": "AP1", "Capacity": 3, "Channel": 1, "X": 0, "Y": 1},
     {"Name": "AP2", "Capacity": 2, "Channel": 1, "X": 3, "Y": 0},
-    {"Name": "AP3", "Capacity": 3, "Channel": 2, "X": 5, "Y": 1}
+    {"Name": "AP3", "Capacity": 3, "Channel": 2, "X": 6, "Y": 1},
+    {"Name": "AP4", "Capacity": 2, "Channel": 3, "X": 8, "Y": 0},
 ]
 
-# === Global settings ===
 settings = {
     "WifiBand": "2.4 GHz",
     "EnvironmentType": "Indoor",
     "IncludePowerConsumption": True
 }
+
+
 
 # === Run pipeline ===
 intermediates = compute_intermediates(users, aps, settings)

@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout, QLabel, QMessageBox
 from PyQt5.QtCore import Qt
 from calculations_ui import CalculationsWindow
 from calculations import compute_intermediates
+from topology import TopologyWindow
+
 
 class OutputWindow(QWidget):
     def __init__(self, users, aps, settings, assignments, messages=None):
@@ -12,6 +14,7 @@ class OutputWindow(QWidget):
         self.users = users
         self.aps = aps
         self.settings = settings
+        self.assignments = assignments  # <<< FIX: keep assignments
 
         layout = QVBoxLayout(self)
 
@@ -66,11 +69,9 @@ class OutputWindow(QWidget):
                 color: #283593;
             }
         """)
-        # Reserve visual space
         self.message_label.setMinimumHeight(80)
         layout.addWidget(self.message_label)
 
-        # Initialize with messages
         if messages:
             self.set_solver_messages(messages)
 
@@ -82,6 +83,7 @@ class OutputWindow(QWidget):
 
         self.topology_btn = QPushButton("Show Topology")
         self.topology_btn.setStyleSheet(self.button_style())
+        self.topology_btn.clicked.connect(self.show_topology)
 
         button_layout.addWidget(self.intermediate_btn)
         button_layout.addWidget(self.topology_btn)
@@ -107,14 +109,24 @@ class OutputWindow(QWidget):
             self.calculations_window = CalculationsWindow(intermediates)
             self.calculations_window.show()
         except Exception as e:
-            from PyQt5.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Intermediate calculation failed:\n{e}")
+
+    def show_topology(self):
+        try:
+            if not isinstance(self.assignments, dict):
+                raise ValueError("Assignments not available or invalid.")
+
+            # recompute intermediates so we have D_max
+            intermediates = compute_intermediates(self.users, self.aps, self.settings)
+
+            # pass intermediates along with users/aps/assignments
+            self.topology_window = TopologyWindow(self.users, self.aps, self.assignments, intermediates)
+            self.topology_window.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Topology failed:\n{e}")
 
     # === Message API ===
     def set_solver_messages(self, messages):
-        """
-        Accepts a list of strings or a single string and renders them.
-        """
         if isinstance(messages, (list, tuple)):
             text = "\n".join(f"• {msg}" for msg in messages)
         else:
@@ -122,12 +134,6 @@ class OutputWindow(QWidget):
         self.message_label.setText(text)
 
     def append_solver_message(self, message):
-        """
-        Appends a single message to the label.
-        """
         current = self.message_label.text().strip()
         bullet = f"• {message}"
-        if current:
-            self.message_label.setText(current + "\n" + bullet)
-        else:
-            self.message_label.setText(bullet)
+        self.message_label.setText(current + ("\n" if current else "") + bullet)
