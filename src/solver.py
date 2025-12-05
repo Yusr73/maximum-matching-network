@@ -5,20 +5,6 @@ def solve_network(intermediates, aps_data):
     """
     Solve the AP-user assignment using Gurobi with hierarchical priorities
     and energy minimization at each level.
-
-    Parameters
-    ----------
-    intermediates : dict
-        Output from compute_intermediates()
-    aps_data : list of dict
-        Each dict must have 'Name' and 'Capacity'
-
-    Returns
-    -------
-    assignments : dict
-        Mapping AP name -> list of connected users
-    status : str
-        Gurobi status ('Optimal', 'Infeasible', etc.)
     """
 
     # Unpack intermediates
@@ -28,65 +14,75 @@ def solve_network(intermediates, aps_data):
     M = intermediates["M"]
     U_H, U_M, U_L = intermediates["U_H"], intermediates["U_M"], intermediates["U_L"]
 
-    # Create model
+    # === Create model ===
     m = Model("AP_Assignment")
-    m.setParam('OutputFlag', 0)  # suppress solver output
+    m.setParam('OutputFlag', 0)
+    m.setParam('Threads', 1)
 
     # Variables
     x = {(u, a): m.addVar(vtype=GRB.BINARY, name=f"x_{u}_{a}") for (u, a) in E}
     m.update()
 
-    # Constraints
-    # 1. Each user connects to at most one AP
-    for u in set(u for u, _ in E):
-        m.addConstr(quicksum(x[(u, a)] for (uu, a) in E if uu == u) <= 1, name=f"excl_{u}")
+    # === Constraints ===
+    # 1. Exclusivity: each user ≤ 1 AP
+    for u in set(u for u,_ in E):
+        m.addConstr(quicksum(x[(u,a)] for (uu,a) in E if uu == u) <= 1)
 
     # 2. AP capacity
     aps = {a["Name"]: a["Capacity"] for a in aps_data}
     for a in aps:
-        m.addConstr(quicksum(x[(u, a)] for (u, aa) in E if aa == a) <= aps[a], name=f"cap_{a}")
+        m.addConstr(quicksum(x[(u,a)] for (u,aa) in E if aa == a) <= aps[a])
 
-    # 3. Interference constraints
+    # 3. Interference
     for a1, a2 in I:
         m.addConstr(
-            quicksum(x[(u, a1)] for (u, aa) in E if aa == a1) +
-            quicksum(x[(u, a2)] for (u, aa) in E if aa == a2) <= M[(a1, a2)],
-            name=f"intf_{a1}_{a2}"
+            quicksum(x[(u,a1)] for (u,aa) in E if aa==a1) +
+            quicksum(x[(u,a2)] for (u,aa) in E if aa==a2)
+            <= M[(a1,a2)]
         )
 
-    # ---- Hierarchical optimization with energy minimization at each level ----
+    # === Priority-wise optimization ===
     def optimize_priority(users_set):
         if not users_set:
             return 0
-        # Maximize number of connected users in this set
-        m.setObjective(quicksum(x[(u, a)] for (u, a) in E if u in users_set), GRB.MAXIMIZE)
+
+        # Step 1 — maximize the number of connected users
+        m.setObjective(quicksum(x[(u,a)] for (u,a) in E if u in users_set), GRB.MAXIMIZE)
         m.optimize()
         if m.status != GRB.OPTIMAL:
             return None
+
         Z_opt = m.ObjVal
 
-        # Fix number of users at optimum
-        m.addConstr(quicksum(x[(u, a)] for (u, a) in E if u in users_set) == Z_opt)
+        # Fix the count
+        m.addConstr(quicksum(x[(u,a)] for (u,a) in E if u in users_set) == Z_opt)
 
-        # Minimize energy among all optimal solutions
+        # Step 2 — minimize energy
         if c:
-            m.setObjective(quicksum(c[(u, a)] * x[(u, a)] for (u, a) in E if u in users_set), GRB.MINIMIZE)
+            m.setObjective(quicksum(c[(u,a)] * x[(u,a)] for (u,a) in E if u in users_set), GRB.MINIMIZE)
             m.optimize()
             if m.status != GRB.OPTIMAL:
                 return None
 
+        # === Freeze the chosen assignments (IMPORTANT) ===
+        for (u,a) in E:
+            if u in users_set:
+                val = x[(u,a)].X
+                if val is not None and val > 0.5:
+                    m.addConstr(x[(u,a)] == 1)
+
         return Z_opt
 
-    # Apply hierarchical optimization
+    # High → Medium → Low
     optimize_priority(U_H)
     optimize_priority(U_M)
     optimize_priority(U_L)
 
-    # Collect solution
+    # === Extract solution ===
     assignments = {a: [] for a in aps}
     if m.status == GRB.OPTIMAL:
-        for (u, a) in E:
-            if x[(u, a)].X > 0.5:
+        for (u,a) in E:
+            if x[(u,a)].X > 0.5:
                 assignments[a].append(u)
         status = "Optimal"
     elif m.status == GRB.INFEASIBLE:

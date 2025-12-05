@@ -21,9 +21,16 @@ class TopologyWindow(QWidget):
 
         self.draw_topology(users, aps, assignments, intermediates)
 
-    def random_color(self):
-        """Generate a random pastel-like color for grouping."""
-        return QColor(random.randint(80, 200), random.randint(80, 200), random.randint(80, 200))
+    def generate_ap_colors(self, aps):
+        """Generate distinct colors for each AP by incrementing hue."""
+        ap_colors = {}
+        n = len(aps)
+        for i, ap in enumerate(aps):
+            hue = int(360 * i / max(1, n))  # evenly spaced hues
+            color = QColor()
+            color.setHsv(hue, 180, 220)  # pastel-like saturation/value
+            ap_colors[ap["Name"]] = color
+        return ap_colors
 
     def draw_topology(self, users, aps, assignments, intermediates):
         s = 100  # scale factor: 1 unit = 100 px
@@ -41,8 +48,8 @@ class TopologyWindow(QWidget):
         ap_icon = ap_icon.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         user_icon = user_icon.scaled(45, 45, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-        # Assign a random color per AP
-        ap_colors = {ap["Name"]: self.random_color() for ap in aps}
+        # Assign deterministic incremented colors per AP
+        ap_colors = self.generate_ap_colors(aps)
 
         # Draw APs
         for ap in aps:

@@ -7,29 +7,33 @@ from solver import solve_network
 from output_ui import OutputWindow
 
 users = [
-    {"Name": "U1", "Priority": "High", "X": 0, "Y": 0, "Device": "Laptop"},
-    {"Name": "U2", "Priority": "High", "X": 1, "Y": 1, "Device": "Smartphone"},
-    {"Name": "U3", "Priority": "Medium", "X": 2, "Y": 0, "Device": "Tablet"},
-    {"Name": "U4", "Priority": "Medium", "X": 3, "Y": 1, "Device": "Wearable"},
-    {"Name": "U5", "Priority": "Medium", "X": 4, "Y": 0, "Device": "Smartphone"},
-    {"Name": "U6", "Priority": "Low", "X": 5, "Y": 1, "Device": "IoT Sensor"},
-    {"Name": "U7", "Priority": "Low", "X": 6, "Y": 0, "Device": "Laptop"},
-    {"Name": "U8", "Priority": "Low", "X": 7, "Y": 1, "Device": "Tablet"},
-    {"Name": "U9", "Priority": "Low", "X": 8, "Y": 0, "Device": "Smartphone"},
+    {"Name": "U1", "Priority": "High", "X": 1, "Y": 9, "Device": "Laptop"},
+    {"Name": "U2", "Priority": "Medium", "X": 2, "Y": 2, "Device": "Smartphone"},
+    {"Name": "U3", "Priority": "Low", "X": 3, "Y": 7, "Device": "Tablet"},
+
+    {"Name": "U4", "Priority": "High", "X": 5, "Y": 1, "Device": "Laptop"},
+    {"Name": "U5", "Priority": "Medium", "X": 5, "Y": 8, "Device": "Wearable"},
+    {"Name": "U6", "Priority": "Low", "X": 6, "Y": 3, "Device": "Smartphone"},
+
+    {"Name": "U7", "Priority": "High", "X": 8, "Y": 6, "Device": "Tablet"},
+    {"Name": "U8", "Priority": "Medium", "X": 8, "Y": 2, "Device": "Laptop"},
+    {"Name": "U9", "Priority": "Low", "X": 9, "Y": 8, "Device": "IoT Sensor"},
+
+    {"Name": "U10", "Priority": "Medium", "X": 4, "Y": 5, "Device": "Smartphone"}
 ]
 
 aps = [
-    {"Name": "AP1", "Capacity": 3, "Channel": 1, "X": 0, "Y": 1},
-    {"Name": "AP2", "Capacity": 2, "Channel": 1, "X": 3, "Y": 0},
-    {"Name": "AP3", "Capacity": 3, "Channel": 2, "X": 6, "Y": 1},
-    {"Name": "AP4", "Capacity": 2, "Channel": 3, "X": 8, "Y": 0},
+    {"Name": "AP1", "Capacity": 3, "Channel": 1,  "X": 2,  "Y": 9},
+    {"Name": "AP2", "Capacity": 3, "Channel": 1,  "X": 5,  "Y": 4},
+    {"Name": "AP3", "Capacity": 2, "Channel": 6,  "X": 7,  "Y": 1},
+    {"Name": "AP4", "Capacity": 3, "Channel": 11, "X": 9,  "Y": 7}
 ]
-
 settings = {
     "WifiBand": "2.4 GHz",
     "EnvironmentType": "Indoor",
-    "IncludePowerConsumption": True
+    "IncludePowerConsumption": False
 }
+
 
 
 
