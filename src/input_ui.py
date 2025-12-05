@@ -422,22 +422,32 @@ class NetworkGUI(QMainWindow):
             users = self.save_user_table()
             aps = self.save_ap_table()
             settings = self.get_global_settings()
+
+            # Compute intermediates
             intermediates = compute_intermediates(users, aps, settings)
+
+            # Solve network
             assignments, status = solve_network(intermediates, aps)
 
-            messages = [
-                f"Status: {status}",
-                f"High-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_H']])}/{len(intermediates['U_H'])}",
-                f"Medium-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_M']])}/{len(intermediates['U_M'])}",
-                f"Low-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_L']])}/{len(intermediates['U_L'])}"
-            ]
+            # Count total connected users
+            total_connected = sum(len(u_list) for u_list in assignments.values())
+            total_users = len(users)
 
+            # Optional: compute average priority of connected users
+            if assignments:
+                avg_priority = sum(
+                    intermediates['w'][u] for u_list in assignments.values() for u in u_list
+                ) / total_connected
+                messages = [
+                    f"Status: {status}",
+                    f"Total users connected: {total_connected}/{total_users}",
+                    f"Average priority of connected users: {avg_priority:.2f}"
+                ]
+            else:
+                messages = [f"Status: {status}", "No assignments available."]
 
             self.output_window = OutputWindow(users, aps, settings, assignments, messages=messages)
             self.output_window.show()
-
-
-
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Solver failed:\n{e}")
 

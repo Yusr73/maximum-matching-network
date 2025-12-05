@@ -8,11 +8,11 @@ def compute_intermediates(users, aps, settings):
     # Alpha by environment
     alpha = 3 if env == "Indoor" else 3.5 if env == "Urban" else 2.7
 
-    # Example: small-scale indoor test
+    # D_max by band and environment
     if wifi_band == "2.4 GHz":
-        D_max = 3 if env == "Indoor" else 4 if env == "Urban" else 8
+        D_max = 30 if env == "Indoor" else 40 if env == "Urban" else 80
     else:  # 5 GHz
-        D_max = 1.5 if env == "Indoor" else 2.5 if env == "Urban" else 5
+        D_max = 15 if env == "Indoor" else 25 if env == "Urban" else 50
 
     D_intf = 1.5 * D_max
 
@@ -27,7 +27,7 @@ def compute_intermediates(users, aps, settings):
             if d <= D_max:
                 E.append((u["Name"], a["Name"]))
 
-    # Energy costs
+    # Normalized energy costs
     base_power = {
         "IoT Sensor": 1,
         "Wearable": 1,
@@ -38,8 +38,8 @@ def compute_intermediates(users, aps, settings):
     c = {}
     for (u_name, a_name) in E:
         device_type = next(u for u in users if u["Name"] == u_name)["Device"]
-        factor = base_power.get(device_type, 1) if include_power else 1
-        c[(u_name, a_name)] = factor * (distances[(u_name,a_name)]**alpha)
+        factor = base_power.get(device_type, 1) if include_power else 0
+        c[(u_name, a_name)] = factor * (distances[(u_name, a_name)]**alpha) / (D_max**alpha)
 
     # AP-AP distances
     ap_distances = {}
@@ -67,10 +67,15 @@ def compute_intermediates(users, aps, settings):
         M_ab = math.floor(k_a + k_b - min(k_a,k_b) * max(0, 1 - d_ab/D_intf))
         M[(a1_name, a2_name)] = M_ab
 
-    # Priority partitions
-    U_H = [u["Name"] for u in users if u["Priority"]=="High"]
-    U_M = [u["Name"] for u in users if u["Priority"]=="Medium"]
-    U_L = [u["Name"] for u in users if u["Priority"]=="Low"]
+    # User weights (priority)
+    w = {}
+    for u in users:
+        if u["Priority"] == "High":
+            w[u["Name"]] = 3
+        elif u["Priority"] == "Medium":
+            w[u["Name"]] = 2
+        else:
+            w[u["Name"]] = 1
 
     return {
         "D_max": D_max,
@@ -80,7 +85,5 @@ def compute_intermediates(users, aps, settings):
         "c": c,
         "I": I,
         "M": M,
-        "U_H": U_H,
-        "U_M": U_M,
-        "U_L": U_L
+        "w": w
     }

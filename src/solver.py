@@ -1,20 +1,20 @@
 # solver.py
 from gurobipy import Model, GRB, quicksum
 
-def solve_network(intermediates, aps_data):
+def solve_network(intermediates, aps_data, lambda_energy=1):
     """
-    Solve the AP-user assignment using Gurobi with hierarchical priorities
-    and energy minimization at each level.
+    Solve the AP-user assignment using Gurobi with a combined weighted objective:
+    user priorities and optional energy minimization (lambda_energy = 0 or 1).
     """
 
     # Unpack intermediates
     E = intermediates["E"]
-    c = intermediates["c"]
+    c = intermediates["c"]        # normalized energy costs
+    w = intermediates["w"]        # integer user weights (priority)
     I = intermediates["I"]
     M = intermediates["M"]
-    U_H, U_M, U_L = intermediates["U_H"], intermediates["U_M"], intermediates["U_L"]
 
-    # === Create model ===
+    #Create model
     m = Model("AP_Assignment")
     m.setParam('OutputFlag', 0)
     m.setParam('Threads', 1)
@@ -23,7 +23,7 @@ def solve_network(intermediates, aps_data):
     x = {(u, a): m.addVar(vtype=GRB.BINARY, name=f"x_{u}_{a}") for (u, a) in E}
     m.update()
 
-    # === Constraints ===
+    #Constraints
     # 1. Exclusivity: each user ≤ 1 AP
     for u in set(u for u,_ in E):
         m.addConstr(quicksum(x[(u,a)] for (uu,a) in E if uu == u) <= 1)
@@ -41,44 +41,16 @@ def solve_network(intermediates, aps_data):
             <= M[(a1,a2)]
         )
 
-    # === Priority-wise optimization ===
-    def optimize_priority(users_set):
-        if not users_set:
-            return 0
+    #Objective: combined weight + energy
+    m.setObjective(
+        quicksum((w[u] - lambda_energy * c[(u,a)]) * x[(u,a)] for (u,a) in E),
+        GRB.MAXIMIZE
+    )
 
-        # Step 1 — maximize the number of connected users
-        m.setObjective(quicksum(x[(u,a)] for (u,a) in E if u in users_set), GRB.MAXIMIZE)
-        m.optimize()
-        if m.status != GRB.OPTIMAL:
-            return None
+    # === Solve
+    m.optimize()
 
-        Z_opt = m.ObjVal
-
-        # Fix the count
-        m.addConstr(quicksum(x[(u,a)] for (u,a) in E if u in users_set) == Z_opt)
-
-        # Step 2 — minimize energy
-        if c:
-            m.setObjective(quicksum(c[(u,a)] * x[(u,a)] for (u,a) in E if u in users_set), GRB.MINIMIZE)
-            m.optimize()
-            if m.status != GRB.OPTIMAL:
-                return None
-
-        # === Freeze the chosen assignments (IMPORTANT) ===
-        for (u,a) in E:
-            if u in users_set:
-                val = x[(u,a)].X
-                if val is not None and val > 0.5:
-                    m.addConstr(x[(u,a)] == 1)
-
-        return Z_opt
-
-    # High → Medium → Low
-    optimize_priority(U_H)
-    optimize_priority(U_M)
-    optimize_priority(U_L)
-
-    # === Extract solution ===
+    #Extract solution
     assignments = {a: [] for a in aps}
     if m.status == GRB.OPTIMAL:
         for (u,a) in E:
