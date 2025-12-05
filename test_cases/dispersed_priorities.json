@@ -1,0 +1,21 @@
+{
+  "title": "Dispersed Priorities",
+  "users": [
+    {"Name": "U1", "Priority": "High", "X": 0, "Y": 0, "Device": "Laptop"},
+    {"Name": "U2", "Priority": "Medium", "X": 5, "Y": 0, "Device": "Smartphone"},
+    {"Name": "U3", "Priority": "Low", "X": 10, "Y": 0, "Device": "Tablet"},
+    {"Name": "U4", "Priority": "High", "X": 0, "Y": 5, "Device": "Laptop"},
+    {"Name": "U5", "Priority": "Medium", "X": 5, "Y": 5, "Device": "Tablet"},
+    {"Name": "U6", "Priority": "Low", "X": 10, "Y": 5, "Device": "Smartphone"}
+  ],
+  "aps": [
+    {"Name": "AP1", "Capacity": 2, "Channel": 1, "X": 0, "Y": 0},
+    {"Name": "AP2", "Capacity": 2, "Channel": 6, "X": 5, "Y": 5},
+    {"Name": "AP3", "Capacity": 2, "Channel": 11, "X": 10, "Y": 0}
+  ],
+  "settings": {
+    "WifiBand": "5 GHz",
+    "EnvironmentType": "Indoor",
+    "IncludePowerConsumption": false
+  }
+}

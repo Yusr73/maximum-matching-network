@@ -201,10 +201,23 @@ class NetworkGUI(QMainWindow):
                 font-size: 16px;
                 font-weight: bold;
                 padding: 10px 20px;
-                border-radius: 14px;
+                border-radius: 18px;
             }
             QPushButton:hover { background-color: #6a1b9a; }
         """)
+        self.test_examples_btn = QPushButton("Test predefined examples")
+        self.test_examples_btn.setStyleSheet("""
+                   QPushButton {
+                       background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                           stop:0 #1565c0, stop:1 #ab47bc);
+                       color: white;
+                       font-size: 16px;
+                       font-weight: bold;
+                       padding: 10px 20px;
+                       border-radius: 14px;
+                   }
+                   QPushButton:hover { background-color: #6a1b9a; }
+               """)
 
         settings.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
         settings.addWidget(wifi_label)
@@ -214,6 +227,7 @@ class NetworkGUI(QMainWindow):
         settings.addWidget(self.power_checkbox)
         settings.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
         settings.addWidget(self.calculate_btn)
+        settings.addWidget(self.test_examples_btn)
         settings.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         layout.addLayout(settings)
@@ -225,7 +239,7 @@ class NetworkGUI(QMainWindow):
         self.add_ap_btn.clicked.connect(self.add_ap_row)
         self.remove_ap_btn.clicked.connect(self.remove_ap_row)
         self.calculate_btn.clicked.connect(self.run_solver)
-
+        self.test_examples_btn.clicked.connect(self.open_test_cases_window)
 
     # === Styles ===
 
@@ -418,6 +432,7 @@ class NetworkGUI(QMainWindow):
                 f"Low-priority satisfied: {len([u for a in assignments.values() for u in a if u in intermediates['U_L']])}/{len(intermediates['U_L'])}"
             ]
 
+
             self.output_window = OutputWindow(users, aps, settings, assignments, messages=messages)
             self.output_window.show()
 
@@ -425,6 +440,12 @@ class NetworkGUI(QMainWindow):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Solver failed:\n{e}")
+
+    def open_test_cases_window(self):
+        from test_cases_ui import TestCasesWindow
+        self.test_cases_window = TestCasesWindow()
+        self.test_cases_window.show()
+
 
 
 
