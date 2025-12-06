@@ -105,9 +105,13 @@ class OutputWindow(QWidget):
 
     def show_intermediates(self):
         try:
+
             intermediates = compute_intermediates(self.users, self.aps, self.settings)
+
+            # Create and show the calculations window
             self.calculations_window = CalculationsWindow(intermediates)
             self.calculations_window.show()
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Intermediate calculation failed:\n{e}")
 

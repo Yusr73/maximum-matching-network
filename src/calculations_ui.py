@@ -18,13 +18,18 @@ class CalculationsWindow(QWidget):
         title.setStyleSheet("font-size: 20px; font-weight: bold; color: #283593; margin-bottom: 16px;")
         layout.addWidget(title)
 
+        # === Reconstruct priority groups from weights ===
+        U_H = [u for u, weight in intermediates["w"].items() if weight == 3]
+        U_M = [u for u, weight in intermediates["w"].items() if weight == 2]
+        U_L = [u for u, weight in intermediates["w"].items() if weight == 1]
+
         # === Summary Table ===
         summary_items = [
             ("Maximum AP range", intermediates["D_max"]),
             ("AP interference radius", intermediates["D_intf"]),
-            ("High Priority Users", ", ".join(intermediates["U_H"])),
-            ("Medium Priority Users", ", ".join(intermediates["U_M"])),
-            ("Low Priority Users", ", ".join(intermediates["U_L"]))
+            ("High Priority Users", ", ".join(U_H)),
+            ("Medium Priority Users", ", ".join(U_M)),
+            ("Low Priority Users", ", ".join(U_L))
         ]
 
         summary_table = QTableWidget()
@@ -33,7 +38,7 @@ class CalculationsWindow(QWidget):
         summary_table.setHorizontalHeaderLabels(["Metric", "Value"])
         summary_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         summary_table.verticalHeader().setVisible(False)
-        summary_table.setStyleSheet(self.table_style())
+        summary_table.setStyleSheet(self.table_style())  # fixed here
 
         for row, (metric, value) in enumerate(summary_items):
             summary_table.setItem(row, 0, QTableWidgetItem(metric))
@@ -59,6 +64,25 @@ class CalculationsWindow(QWidget):
         layout.addLayout(row3)
 
         self.setLayout(layout)
+
+    # === Add these two methods ===
+    def table_style(self):
+        return """
+            QTableWidget {
+                background-color: #f9f9f9;
+                border: 1px solid #b39ddb;
+                border-radius: 8px;
+                font-family: Roboto;
+                font-size: 13px;
+            }
+            QHeaderView::section {
+                background-color: #5c6bc0;
+                color: white;
+                font-weight: bold;
+                padding: 6px;
+                border: none;
+            }
+        """
 
     def make_table(self, title, data, headers):
         box = QGroupBox(title)
@@ -92,21 +116,3 @@ class CalculationsWindow(QWidget):
 
         box_layout.addWidget(table)
         return box
-
-    def table_style(self):
-        return """
-            QTableWidget {
-                background-color: #f9f9f9;
-                border: 1px solid #b39ddb;
-                border-radius: 8px;
-                font-family: Roboto;
-                font-size: 13px;
-            }
-            QHeaderView::section {
-                background-color: #5c6bc0;
-                color: white;
-                font-weight: bold;
-                padding: 6px;
-                border: none;
-            }
-        """
