@@ -34,11 +34,12 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 
 ![Main Interface](https://github.com/user-attachments/assets/ed8b3f56-2f01-4f1d-8443-c7512bfd2071)
 
-*Main application interface showing network topology and controls*
+*Input tables for managing users and access points*
 
 ![Input Tables](https://github.com/user-attachments/assets/2efb6538-9dc1-414e-a90c-2d336690ba4b)
+*Output tables *
 
-*Input tables for managing users and access points*
+
 
 ![Visualization](https://github.com/user-attachments/assets/8b802ed7-f3e1-4732-85ae-7f72886d59e4)
 
@@ -53,3 +54,4 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 *Intermediate calculations showing distance and energy matrices*
 
 ## Project Structure
+
