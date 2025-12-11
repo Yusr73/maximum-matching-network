@@ -37,8 +37,7 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 *Input tables for managing users and access points*
 
 ![Input Tables](https://github.com/user-attachments/assets/2efb6538-9dc1-414e-a90c-2d336690ba4b)
-*Output tables *
-
+*Optimization results and assignment information*
 
 
 ![Visualization](https://github.com/user-attachments/assets/8b802ed7-f3e1-4732-85ae-7f72886d59e4)
@@ -46,12 +45,12 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 *Network topology visualization with coverage areas*
 
 ![Results Display](https://github.com/user-attachments/assets/decab091-fc7f-4476-8608-c76354733ab1)
+*Intermediate calculations showing distance and energy matrices*
 
-*Optimization results and assignment information*
 
 ![Calculations](https://github.com/user-attachments/assets/26c27814-5b57-471c-8613-45a61f65f4dc)
 
-*Intermediate calculations showing distance and energy matrices*
+
 
 ## Project Structure
 
