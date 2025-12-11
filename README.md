@@ -24,7 +24,19 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 
 ## Installation
 
-*(Add installation instructions here)*
+## Installation
+
+clone the repository
+git clone https://github.com/yourusername/wireless-network-optimization.git
+cd wireless-network-optimization
+Install dependencies
+pip install -r requirements.txt
+Required packages
+PyQt5
+Gurobi Python API
+Set up Gurobi license Follow the official Gurobi installation instructions for your operating system and ensure your license is active.
+Run the application
+python main.py
 
 ## Usage
 
@@ -37,6 +49,7 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 *Input tables for managing users and access points*
 
 ![Input Tables](https://github.com/user-attachments/assets/2efb6538-9dc1-414e-a90c-2d336690ba4b)
+
 *Optimization results and assignment information*
 
 
@@ -45,6 +58,7 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 *Network topology visualization with coverage areas*
 
 ![Results Display](https://github.com/user-attachments/assets/decab091-fc7f-4476-8608-c76354733ab1)
+
 *Intermediate calculations showing distance and energy matrices*
 
 
@@ -53,4 +67,15 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 
 
 ## Project Structure
-
+main.py                  - Main GUI entry point  
+input_ui.py              - Input interface (users, APs, settings)  
+output_ui.py             - Results window  
+calculations_ui.py       - Intermediate calculations window  
+topology_ui.py           - Network topology visualization  
+predefinedExamples_ui.py - Predefined test cases window  
+solver_thread.py         - QThread wrapper for solver  
+solver.py                - Network optimization logic  
+calculations.py          - Preprocessing & intermediate computations  
+test_cases/              - JSON test cases  
+screenshots/             - Example screenshots for README  
+README.md                - Project documentation  
