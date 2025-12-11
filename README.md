@@ -24,19 +24,17 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 
 ## Installation
 
-## Installation
-
-clone the repository
-git clone https://github.com/yourusername/wireless-network-optimization.git
-cd wireless-network-optimization
-Install dependencies
-pip install -r requirements.txt
-Required packages
-PyQt5
-Gurobi Python API
-Set up Gurobi license Follow the official Gurobi installation instructions for your operating system and ensure your license is active.
-Run the application
-python main.py
+- clone the repository
+ git clone https://github.com/yourusername/wireless-network-optimization.git
+- cd wireless-network-optimization
+- Install dependencies
+ pip install -r requirements.txt
+-Required packages
+ PyQt5
+ Gurobi Python API
+- Set up Gurobi license Follow the official Gurobi installation instructions for your operating system and ensure your license is active.
+- Run the application
+ python main.py
 
 ## Usage
 
@@ -79,3 +77,4 @@ calculations.py          - Preprocessing & intermediate computations
 test_cases/              - JSON test cases  
 screenshots/             - Example screenshots for README  
 README.md                - Project documentation  
+
