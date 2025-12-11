@@ -6,7 +6,7 @@ from topology import TopologyWindow
 
 
 class OutputWindow(QWidget):
-    def __init__(self, users, aps, settings, assignments, messages=None):
+    def __init__(self, users, aps, settings, assignments=None, messages=None):
         super().__init__()
         self.setWindowTitle("Optimization Result")
         self.setFixedSize(700, 500)
@@ -14,7 +14,20 @@ class OutputWindow(QWidget):
         self.users = users
         self.aps = aps
         self.settings = settings
-        self.assignments = assignments  # <<< FIX: keep assignments
+
+        # === Ensure assignments is a dict with all APs as keys ===
+        if assignments is None:
+            assignments = {a["Name"]: [] for a in aps}
+        else:
+            # Fill missing APs with empty lists
+            for a in aps:
+                if a["Name"] not in assignments:
+                    assignments[a["Name"]] = []
+            # Ensure all values are lists
+            for k, v in assignments.items():
+                if not isinstance(v, list):
+                    assignments[k] = []
+        self.assignments = assignments
 
         layout = QVBoxLayout(self)
 
@@ -42,12 +55,15 @@ class OutputWindow(QWidget):
             }
             QTableWidget::item { padding: 6px; }
         """)
-        self.table.setRowCount(len(assignments))
-        for row, (ap, users_list) in enumerate(assignments.items()):
+        self.table.setRowCount(len(self.assignments))
+        for row, (ap, users_list) in enumerate(self.assignments.items()):
             ap_item = QTableWidgetItem(ap)
             ap_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 0, ap_item)
 
+            # Safe: ensure users_list is a list
+            if not isinstance(users_list, list):
+                users_list = []
             users_item = QTableWidgetItem(", ".join(users_list))
             users_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 1, users_item)
@@ -105,13 +121,9 @@ class OutputWindow(QWidget):
 
     def show_intermediates(self):
         try:
-
             intermediates = compute_intermediates(self.users, self.aps, self.settings)
-
-            # Create and show the calculations window
             self.calculations_window = CalculationsWindow(intermediates)
             self.calculations_window.show()
-
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Intermediate calculation failed:\n{e}")
 
@@ -120,10 +132,7 @@ class OutputWindow(QWidget):
             if not isinstance(self.assignments, dict):
                 raise ValueError("Assignments not available or invalid.")
 
-            # recompute intermediates so we have D_max
             intermediates = compute_intermediates(self.users, self.aps, self.settings)
-
-            # pass intermediates along with users/aps/assignments
             self.topology_window = TopologyWindow(self.users, self.aps, self.assignments, intermediates)
             self.topology_window.show()
         except Exception as e:

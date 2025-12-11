@@ -8,11 +8,11 @@ def compute_intermediates(users, aps, settings):
     # Alpha by environment
     alpha = 3 if env == "Indoor" else 3.5 if env == "Urban" else 2.7
 
-    # D_max by band and environment
+    # D_max by band and environment (scaled to coordinate system)
     if wifi_band == "2.4 GHz":
-        D_max = 30 if env == "Indoor" else 40 if env == "Urban" else 80
+        D_max = 5 if env == "Indoor" else 7 if env == "Urban" else 12
     else:  # 5 GHz
-        D_max = 15 if env == "Indoor" else 25 if env == "Urban" else 50
+        D_max = 3 if env == "Indoor" else 5 if env == "Urban" else 10
 
     D_intf = 1.5 * D_max
 
@@ -27,7 +27,7 @@ def compute_intermediates(users, aps, settings):
             if d <= D_max:
                 E.append((u["Name"], a["Name"]))
 
-    # Normalized energy costs
+    # Normalized energy costs with 0.7 scaling factor
     base_power = {
         "IoT Sensor": 1,
         "Wearable": 1,
@@ -35,11 +35,12 @@ def compute_intermediates(users, aps, settings):
         "Tablet": 4,
         "Laptop": 6
     }
+
     c = {}
     for (u_name, a_name) in E:
         device_type = next(u for u in users if u["Name"] == u_name)["Device"]
         factor = base_power.get(device_type, 1) if include_power else 0
-        c[(u_name, a_name)] = factor * (distances[(u_name, a_name)]**alpha) / (D_max**alpha)
+        c[(u_name, a_name)] = 0.1 * factor * (distances[(u_name, a_name)] ** alpha) / (D_max ** alpha)
 
     # AP-AP distances
     ap_distances = {}

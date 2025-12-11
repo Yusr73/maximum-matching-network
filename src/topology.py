@@ -1,23 +1,18 @@
-
 from PyQt5.QtWidgets import (
     QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout,
     QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPixmapItem
 )
-from PyQt5.QtGui import QPen, QBrush, QColor, QPixmap
+from PyQt5.QtGui import QPen, QBrush, QColor, QPixmap, QPainter
 from PyQt5.QtCore import Qt
 
-
-from PyQt5.QtGui import QPainter
 
 class ZoomableView(QGraphicsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._zoom = 0
-        # Corrected: use QPainter.Antialiasing
         self.setRenderHints(self.renderHints() | QPainter.Antialiasing)
 
     def wheelEvent(self, event):
-        """Zoom in/out with Ctrl+Wheel or touchpad pinch."""
         zoom_in_factor = 1.25
         zoom_out_factor = 1 / zoom_in_factor
 
@@ -38,7 +33,6 @@ class ZoomableView(QGraphicsView):
         self.scale(zoom_factor, zoom_factor)
 
 
-# === Topology window ===
 class TopologyWindow(QWidget):
     def __init__(self, users, aps, assignments, intermediates):
         super().__init__()
@@ -54,77 +48,85 @@ class TopologyWindow(QWidget):
         self.draw_topology(users, aps, assignments, intermediates)
 
     def generate_ap_colors(self, aps):
-        """Generate distinct colors for each AP by incrementing hue."""
         ap_colors = {}
         n = len(aps)
         for i, ap in enumerate(aps):
-            hue = int(360 * i / max(1, n))  # evenly spaced hues
+            hue = int(360 * i / max(1, n))
             color = QColor()
-            color.setHsv(hue, 180, 220)  # pastel-like saturation/value
+            color.setHsv(hue, 180, 220)
             ap_colors[ap["Name"]] = color
         return ap_colors
 
     def draw_topology(self, users, aps, assignments, intermediates):
-        s = 100  # base scale factor for layout
-        user_dict = {u["Name"]: u for u in users}
+        if not users or not aps:
+            return
 
-        # Real coverage radius from intermediates
-        D_max = intermediates.get("D_max", 30)
-        ap_radius_px = D_max * s
+        all_x = [u["X"] for u in users] + [a["X"] for a in aps]
+        all_y = [u["Y"] for u in users] + [a["Y"] for a in aps]
 
-        # Load icons
+        X_min, X_max = min(all_x), max(all_x)
+        Y_min, Y_max = min(all_y), max(all_y)
+
+        scene_width, scene_height = 1200, 800
+        s_x = scene_width / (X_max - X_min) if X_max != X_min else 1
+        s_y = scene_height / (Y_max - Y_min) if Y_max != Y_min else 1
+        s = min(s_x, s_y)
+
+        x_offset = (scene_width - (X_max - X_min) * s) / 2
+        y_offset = (scene_height - (Y_max - Y_min) * s) / 2
+
+        # --- Use real coverage radius from intermediates ---
+        D_max = intermediates.get("D_max", 30)  # real distance units
+        ap_radius_px = D_max * s  # scale to pixels
+
         ap_icon = QPixmap(r"C:\Bureau\Documenten\RT3\Info\Recherche operationnelle\project\ro-matching\screenshots\image-removebg-preview.png")
         user_icon = QPixmap(r"C:\Bureau\Documenten\RT3\Info\Recherche operationnelle\project\ro-matching\screenshots\Copilot_20251127_214136-removebg-preview.png")
-
-        # Scale icons
         ap_icon = ap_icon.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         user_icon = user_icon.scaled(45, 45, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-        # Assign colors per AP
         ap_colors = self.generate_ap_colors(aps)
 
-        # Draw APs
+        # --- Draw APs ---
         for ap in aps:
             name = ap["Name"]
-            x, y = ap["X"] * s, ap["Y"] * s
+            x = (ap["X"] - X_min) * s + x_offset
+            y = (ap["Y"] - Y_min) * s + y_offset
 
-            # Coverage circle
-            circle = QGraphicsEllipseItem(x - ap_radius_px, y - ap_radius_px,
-                                          2 * ap_radius_px, 2 * ap_radius_px)
-            circle.setBrush(QBrush(QColor(225, 190, 231, 40)))  # semi-transparent
+            # Coverage circle with real distance scaling
+            circle = QGraphicsEllipseItem(
+                x - ap_radius_px, y - ap_radius_px, 2 * ap_radius_px, 2 * ap_radius_px
+            )
+            circle.setBrush(QBrush(QColor(225, 190, 231, 50)))
             circle.setPen(QPen(QColor("#6a1b9a"), 2))
             self.scene.addItem(circle)
 
-            # AP square
+            # AP square, icon, labels as before
             square_size = 60
-            rect = QGraphicsRectItem(x - square_size/2, y - square_size/2, square_size, square_size)
+            rect = QGraphicsRectItem(x - square_size / 2, y - square_size / 2, square_size, square_size)
             rect.setBrush(QBrush(ap_colors[name]))
             rect.setPen(QPen(Qt.black, 2))
             self.scene.addItem(rect)
 
-            # AP icon
             ap_item = QGraphicsPixmapItem(ap_icon)
-            ap_item.setPos(x - ap_icon.width()/2, y - ap_icon.height()/2)
+            ap_item.setPos(x - ap_icon.width() / 2, y - ap_icon.height() / 2)
             self.scene.addItem(ap_item)
 
-            # AP name above
             name_text = QGraphicsTextItem(name)
             name_text.setDefaultTextColor(Qt.black)
-            name_text.setPos(x - square_size/2, y - square_size/2 - 20)
+            name_text.setPos(x - square_size / 2, y - square_size / 2 - 20)
             self.scene.addItem(name_text)
 
-            # Channel below
             channel_text = QGraphicsTextItem(f"Ch {ap['Channel']}")
             channel_text.setDefaultTextColor(Qt.black)
-            channel_text.setPos(x - square_size/2, y + square_size/2 + 5)
+            channel_text.setPos(x - square_size / 2, y + square_size / 2 + 5)
             self.scene.addItem(channel_text)
 
-        # Draw users
+        # --- Draw Users ---
         for user in users:
             uname = user["Name"]
-            x, y = user["X"] * s, user["Y"] * s
+            x = (user["X"] - X_min) * s + x_offset
+            y = (user["Y"] - Y_min) * s + y_offset
 
-            # Assigned AP
             assigned_ap = None
             for ap_name, user_list in assignments.items():
                 if uname in user_list:
@@ -132,26 +134,22 @@ class TopologyWindow(QWidget):
                     break
 
             if assigned_ap:
-                # User square with AP color
                 square_size = 40
-                rect = QGraphicsRectItem(x - square_size/2, y - square_size/2, square_size, square_size)
+                rect = QGraphicsRectItem(x - square_size / 2, y - square_size / 2, square_size, square_size)
                 rect.setBrush(QBrush(ap_colors[assigned_ap]))
                 rect.setPen(QPen(Qt.black, 1))
                 self.scene.addItem(rect)
 
-            # User icon
             user_item = QGraphicsPixmapItem(user_icon)
-            user_item.setPos(x - user_icon.width()/2, y - user_icon.height()/2)
+            user_item.setPos(x - user_icon.width() / 2, y - user_icon.height() / 2)
             self.scene.addItem(user_item)
 
-            # User label above
             label = QGraphicsTextItem(uname)
             label.setDefaultTextColor(Qt.black)
-            label.setPos(x - user_icon.width()/2, y - user_icon.height()/2 - 20)
+            label.setPos(x - user_icon.width() / 2, y - user_icon.height() / 2 - 20)
             self.scene.addItem(label)
 
-            # Priority label below
             priority_text = QGraphicsTextItem(user.get("Priority", ""))
             priority_text.setDefaultTextColor(QColor("#424242"))
-            priority_text.setPos(x - user_icon.width()/2, y + user_icon.height()/2 + 5)
+            priority_text.setPos(x - user_icon.width() / 2, y + user_icon.height() / 2 + 5)
             self.scene.addItem(priority_text)

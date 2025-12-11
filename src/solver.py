@@ -5,6 +5,10 @@ def solve_network(intermediates, aps_data, lambda_energy=1):
     """
     Solve the AP-user assignment using Gurobi with a combined weighted objective:
     user priorities and optional energy minimization (lambda_energy = 0 or 1).
+
+    Returns:
+        assignments: dict with AP names as keys and lists of assigned user names
+        status: string describing solver result ("Optimal", "Infeasible", etc.)
     """
 
     # Unpack intermediates
@@ -14,7 +18,7 @@ def solve_network(intermediates, aps_data, lambda_energy=1):
     I = intermediates["I"]
     M = intermediates["M"]
 
-    #Create model
+    # Create model
     m = Model("AP_Assignment")
     m.setParam('OutputFlag', 0)
     m.setParam('Threads', 1)
@@ -23,7 +27,7 @@ def solve_network(intermediates, aps_data, lambda_energy=1):
     x = {(u, a): m.addVar(vtype=GRB.BINARY, name=f"x_{u}_{a}") for (u, a) in E}
     m.update()
 
-    #Constraints
+    # Constraints
     # 1. Exclusivity: each user ≤ 1 AP
     for u in set(u for u,_ in E):
         m.addConstr(quicksum(x[(u,a)] for (uu,a) in E if uu == u) <= 1)
@@ -41,7 +45,7 @@ def solve_network(intermediates, aps_data, lambda_energy=1):
             <= M[(a1,a2)]
         )
 
-    #Objective: combined weight + energy
+    # Objective: combined weight + energy
     m.setObjective(
         quicksum((w[u] - lambda_energy * c[(u,a)]) * x[(u,a)] for (u,a) in E),
         GRB.MAXIMIZE
@@ -50,18 +54,22 @@ def solve_network(intermediates, aps_data, lambda_energy=1):
     # === Solve
     m.optimize()
 
-    #Extract solution
+    # Initialize assignments dictionary (same format for all cases)
     assignments = {a: [] for a in aps}
+
+    # Extract solution if feasible
     if m.status == GRB.OPTIMAL:
         for (u,a) in E:
             if x[(u,a)].X > 0.5:
                 assignments[a].append(u)
         status = "Optimal"
+
     elif m.status == GRB.INFEASIBLE:
-        assignments = {}
+        # Keep empty lists for all APs
         status = "Infeasible"
+
     else:
-        assignments = {}
+        # Keep empty lists but report solver status
         status = f"Solver status: {m.status}"
 
     return assignments, status
