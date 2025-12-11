@@ -2,7 +2,7 @@
 
 This project provides a graphical tool for modeling, solving, and visualizing wireless network optimization problems. The application supports integer and mixed linear programming formulations, enabling optimization of user-to-Access Point (AP) assignments based on priorities, capacities, and optionally energy consumption.
 
----
+
 
 ## Table of Contents
 
@@ -12,7 +12,7 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 - [Interface Screenshots](#interface-screenshots)  
 - [Project Structure](#project-structure)  
 
----
+
 
 ## Features
 
@@ -26,7 +26,7 @@ This project provides a graphical tool for modeling, solving, and visualizing wi
 - **Intermediate calculations**: Display distance, energy, and interference matrices for analysis.  
 - **Predefined test cases**: Load and test scenarios quickly with JSON input files.
 
----
+
 
 ## Installation
 
@@ -76,8 +76,7 @@ Interface Screenshots
 <img width="1919" height="1020" alt="image" src="https://github.com/user-attachments/assets/decab091-fc7f-4476-8608-c76354733ab1" />
 <img width="698" height="540" alt="image" src="https://github.com/user-attachments/assets/26c27814-5b57-471c-8613-45a61f65f4dc" />
 
-Project Structure
-.
+'''.
 ├── main.py                  # Main GUI entry point
 ├── input_ui.py              # Input interface (users, APs, settings)
 ├── output_ui.py             # Results window
@@ -89,8 +88,9 @@ Project Structure
 ├── calculations.py          # Preprocessing & intermediate computations
 ├── test_cases/              # JSON test cases
 ├── screenshots/             # Example screenshots for README
-└── README.md                # Project documentation
+└── README.md                # Project documentation '''
 This README provides installation instructions, usage details, and visual reference for all main features of the application.
+
 
 
 
